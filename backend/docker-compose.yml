@@ -1,5 +1,7 @@
 version: '3.8'
+
 services:
+  # Base de datos principal (MariaDB)
   db:
     image: mariadb:latest
     container_name: corteXpres_db
@@ -14,6 +16,7 @@ services:
     volumes:
       - db_data:/var/lib/mysql
 
+  # Backend de tu proyecto
   api:
     build: .
     container_name: corteXpres_api
@@ -29,5 +32,35 @@ services:
       - DB_NAME=corteXpres
       - PORT=3000
 
+  # Base de datos para Keycloak (PostgreSQL)
+  keycloak-db:
+    image: postgres:15
+    container_name: keycloak_db
+    restart: always
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak
+    volumes:
+      - keycloak_data:/var/lib/postgresql/data
+
+  # Servicio Keycloak
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.1
+    container_name: keycloak
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+    ports:
+      - "8080:8080"
+    depends_on:
+      - keycloak-db
+
 volumes:
   db_data:
+  keycloak_data:
